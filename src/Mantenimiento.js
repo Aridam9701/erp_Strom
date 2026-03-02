@@ -84,7 +84,7 @@ export default function Mantenimiento() {
 
   useEffect(() => {
     fetchMantenimientos()
-  }, [filtros])
+  }, [fetchMantenimientos]);
 
   useEffect(() => {
     if (showNuevoMantenimiento) {
