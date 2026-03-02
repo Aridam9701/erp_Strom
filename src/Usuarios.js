@@ -70,7 +70,7 @@ export default function Usuarios() {
     }
 
     // Insertar info adicional en tabla usuarios
-    const { data: userData, error: dbError } = await supabase.from('usuarios').insert([
+   /* const { data: userData, error: dbError } = await supabase.from('usuarios').insert([
       {
         id: authData.user.id,
         nombre,
@@ -84,7 +84,7 @@ export default function Usuarios() {
       console.error('Error guardando info usuario:', dbError)
       alert(`Error guardando datos usuario: ${dbError.message}`)
       return
-    }
+    }*/
 
     alert('Usuario creado con éxito.')
     fetchUsuarios()
