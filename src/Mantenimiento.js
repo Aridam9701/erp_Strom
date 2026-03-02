@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
 
 export default function Mantenimiento() {
@@ -43,44 +43,44 @@ export default function Mantenimiento() {
   ]
 
   // Carga los mantenimientos con filtros
-  const fetchMantenimientos = async () => {
-    let query = supabase.from('mantenimientos').select('*')
+  const fetchMantenimientos = useCallback(async () => {
+  let query = supabase.from('mantenimientos').select('*')
 
-    if (filtros.equipo) query = query.eq('equipo_id', filtros.equipo)
-    if (filtros.tipo) query = query.eq('tipo_mantenimiento', filtros.tipo)
-    if (filtros.tecnico) query = query.ilike('tecnico', `%${filtros.tecnico}%`)
-    if (filtros.fechaDesde) query = query.gte('fecha', filtros.fechaDesde)
-    if (filtros.fechaHasta) query = query.lte('fecha', filtros.fechaHasta)
+  if (filtros.equipo) query = query.eq('equipo_id', filtros.equipo)
+  if (filtros.tipo) query = query.eq('tipo_mantenimiento', filtros.tipo)
+  if (filtros.tecnico) query = query.ilike('tecnico', `%${filtros.tecnico}%`)
+  if (filtros.fechaDesde) query = query.gte('fecha', filtros.fechaDesde)
+  if (filtros.fechaHasta) query = query.lte('fecha', filtros.fechaHasta)
 
-    const { data, error } = await query.order('fecha', { ascending: false })
+  const { data, error } = await query.order('fecha', { ascending: false })
 
-    if (error) {
-      console.error(error)
-      setMantenimientos([])
-    } else {
-      setMantenimientos(data || [])
-      setResumen({
-        totalPeriodo: data?.length || 0,
-        costoAcumulado: data?.reduce((suma, m) => suma + (m.costo || 0), 0) || 0,
-        equiposFuera: data?.filter(m => m.estado_equipo === 'fuera').length || 0,
-      })
-    }
+  if (error) {
+    console.error(error)
+    setMantenimientos([])
+  } else {
+    setMantenimientos(data || [])
+    setResumen({
+      totalPeriodo: data?.length || 0,
+      costoAcumulado: data?.reduce((suma, m) => suma + (m.costo || 0), 0) || 0,
+      equiposFuera: data?.filter(m => m.estado_equipo === 'fuera').length || 0,
+    })
   }
+}, [filtros, setMantenimientos, setResumen])
 
-  // Carga los equipos de la tabla activos para mostrar en select
-  const fetchEquiposActivos = async () => {
-    const { data, error } = await supabase
-      .from('activos')
-      .select('id, codigo, tipo, marca, modelo')
-      .eq('estado', 'activo')
+// Carga los equipos de la tabla activos para mostrar en select
+const fetchEquiposActivos = useCallback(async () => {
+  const { data, error } = await supabase
+    .from('activos')
+    .select('id, codigo, tipo, marca, modelo')
+    .eq('estado', 'activo')
 
-    if (error) {
-      console.error('Error cargando equipos:', error)
-      setEquipos([])
-    } else {
-      setEquipos(data || [])
-    }
+  if (error) {
+    console.error('Error cargando equipos:', error)
+    setEquipos([])
+  } else {
+    setEquipos(data || [])
   }
+}, [setEquipos])
 
   useEffect(() => {
     fetchMantenimientos()
