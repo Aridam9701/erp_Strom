@@ -30,7 +30,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     fetchUsuarios()
-  }, [fetchUsuarios])
+  }, [filtros])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -58,7 +58,7 @@ export default function Usuarios() {
     }
 
     // Crear usuario en Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+  /*  const { data: authData, error: authError } = await supabase.auth.signUp({
       email: correo,
       password: contraseña,
     })
@@ -67,7 +67,7 @@ export default function Usuarios() {
       console.error('Error creando usuario en Auth:', authError)
       alert(`Error: ${authError.message}`)
       return
-    }
+    } */
 
     // Insertar info adicional en tabla usuarios
    /* const { data: userData, error: dbError } = await supabase.from('usuarios').insert([
