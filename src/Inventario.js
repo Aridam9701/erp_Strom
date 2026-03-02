@@ -55,21 +55,7 @@ export default function Inventario() {
   }
 
   // Control formularios
-  const handleNuevoMaterialChange = (e) => {
-    const { name, value } = e.target
-    setNuevoMaterialData(prev => ({
-      ...prev,
-      [name]: name.includes('stock') ? Number(value) : value,
-    }))
-  }
 
-  const handleMovimientoChange = (e) => {
-    const { name, value } = e.target
-    setMovimientoData(prev => ({
-      ...prev,
-      [name]: name === 'cantidad' ? Number(value) : value,
-    }))
-  }
 
   // Guardar material
   const guardarNuevoMaterial = async (e) => {
