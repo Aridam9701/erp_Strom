@@ -86,11 +86,9 @@ const fetchEquiposActivos = useCallback(async () => {
     fetchMantenimientos()
   }, [fetchMantenimientos])
 
-  useEffect(() => {
-    if (showNuevoMantenimiento) {
-      fetchEquiposActivos()
-    }
-  }, [showNuevoMantenimiento])
+useEffect(() => {
+  fetchEquiposActivos()
+}, [fetchEquiposActivos])
 
   const handleChange = e => {
     const { name, value } = e.target
