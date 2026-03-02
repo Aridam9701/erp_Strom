@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { supabase } from './supabaseClient'
 
 export default function Usuarios() {
@@ -18,19 +18,19 @@ export default function Usuarios() {
     rol: '',
   })
 
-  const fetchUsuarios = async () => {
-    let query = supabase.from('usuarios').select('*')
-    if (filtros.rol) query = query.eq('rol', filtros.rol)
-    if (filtros.estado) query = query.eq('estado', filtros.estado)
+const fetchUsuarios = useCallback(async () => {
+  let query = supabase.from('usuarios').select('*')
+  if (filtros.rol) query = query.eq('rol', filtros.rol)
+  if (filtros.estado) query = query.eq('estado', filtros.estado)
 
-    const { data, error } = await query.order('nombre', { ascending: true })
-    if (error) console.error(error)
-    else setUsuarios(data || [])
-  }
+  const { data, error } = await query.order('nombre', { ascending: true })
+  if (error) console.error(error)
+  else setUsuarios(data || [])
+}, [filtros, setUsuarios])
 
   useEffect(() => {
     fetchUsuarios()
-  }, [filtros])
+  }, [fetchUsuarios])
 
   const handleChange = (e) => {
     const { name, value } = e.target
