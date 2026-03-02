@@ -74,7 +74,7 @@ export default function Activos() {
 
   useEffect(() => {
     fetchActivos()
-  }, [fetchActivos]);
+  }, [fetchActivos])
 
   // Maneja la actualización de filtros
   const handleInputChange = (e) => {
