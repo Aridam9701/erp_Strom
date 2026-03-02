@@ -30,7 +30,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     fetchUsuarios()
-  }, [filtros])
+  }, [fetchUsuarios]);
 
   const handleChange = (e) => {
     const { name, value } = e.target
