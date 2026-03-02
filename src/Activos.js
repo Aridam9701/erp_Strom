@@ -49,29 +49,29 @@ export default function Activos() {
   }
 
   // Carga activos y genera código nuevo cuando se abre formulario
-  const fetchActivos = async () => {
-    setLoading(true)
-    let query = supabase.from('activos').select('*')
+  const fetchActivos = useCallback(async () => {
+  setLoading(true)
+  let query = supabase.from('activos').select('*')
 
-    if (filtros.tipo) query = query.eq('tipo', filtros.tipo)
-    if (filtros.marca) query = query.eq('marca', filtros.marca)
-    if (filtros.estado) query = query.eq('estado', filtros.estado)
-    if (filtros.modelo) query = query.ilike('modelo', `%${filtros.modelo}%`)
+  if (filtros.tipo) query = query.eq('tipo', filtros.tipo)
+  if (filtros.marca) query = query.eq('marca', filtros.marca)
+  if (filtros.estado) query = query.eq('estado', filtros.estado)
+  if (filtros.modelo) query = query.ilike('modelo', `%${filtros.modelo}%`)
 
-    const { data, error } = await query.order('id', { ascending: true })
-    if (error) {
-      console.error('Error cargando activos:', error)
-      setActivos([])
-    } else {
-      setActivos(data || [])
-      if (showNuevoActivo) {
-        const nuevoCodigo = generarCodigoNuevo(data)
-        setFormData(prev => ({ ...prev, codigo: nuevoCodigo }))
-      }
+  const { data, error } = await query.order('id', { ascending: true })
+  if (error) {
+    console.error('Error cargando activos:', error)
+    setActivos([])
+  } else {
+    setActivos(data || [])
+    if (showNuevoActivo) {
+      const nuevoCodigo = generarCodigoNuevo(data)
+      setFormData(prev => ({ ...prev, codigo: nuevoCodigo }))
     }
-    setLoading(false)
   }
-
+  setLoading(false)
+}, [filtros, showNuevoActivo, setLoading, setActivos, setFormData]) // Dependencias que usa la función
+  
   useEffect(() => {
     fetchActivos()
   }, [fetchActivos])
