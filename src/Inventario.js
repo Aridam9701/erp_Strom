@@ -1,6 +1,30 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 
+function Modal({ children, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-gray-900 p-6 rounded-lg w-full max-w-md relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-xl font-bold"
+          aria-label="Cerrar"
+          type="button"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function Inventario() {
   const [materiales, setMateriales] = useState([])
   const [movimientos, setMovimientos] = useState([])
@@ -16,11 +40,15 @@ export default function Inventario() {
   const [movimientoData, setMovimientoData] = useState({
     material_id: '',
     tipo_movimiento: '',
-    cantidad: '',
+    cantidad: 0,
     motivo: '',
     fecha_movimiento: new Date().toISOString().slice(0, 10),
     notas: '',
   })
+
+  // Estados para mostrar modales
+  const [mostrarFormularioMaterial, setMostrarFormularioMaterial] = useState(false)
+  const [mostrarFormularioMovimiento, setMostrarFormularioMovimiento] = useState(false)
 
   // Opciones
   const categorias = [
@@ -33,8 +61,13 @@ export default function Inventario() {
     { value: 'caja', label: 'Caja' },
     { value: 'litro', label: 'Litro' },
   ]
+  const motivosSalida = [
+    { value: 'uso interno', label: 'Uso Interno' },
+    { value: 'venta', label: 'Venta' },
+    { value: 'deterioro', label: 'Deterioro' },
+    { value: 'otro', label: 'Otro' },
+  ]
 
-  // Obtener datos iniciales
   useEffect(() => {
     fetchMateriales()
     fetchMovimientos()
@@ -54,10 +87,22 @@ export default function Inventario() {
     else setMovimientos(data || [])
   }
 
-  // Control formularios
+  const handleNuevoMaterialChange = (e) => {
+    const { name, value } = e.target
+    setNuevoMaterialData(prev => ({
+      ...prev,
+      [name]: name.includes('stock') ? parseInt(value) || 0 : value
+    }))
+  }
 
+  const handleMovimientoChange = (e) => {
+    const { name, value } = e.target
+    setMovimientoData(prev => ({
+      ...prev,
+      [name]: name === 'cantidad' ? Number(value) : value
+    }))
+  }
 
-  // Guardar material
   const guardarNuevoMaterial = async (e) => {
     e.preventDefault()
     try {
@@ -72,12 +117,12 @@ export default function Inventario() {
         stock_minimo: 0,
         stock_actual: 0,
       })
+      setMostrarFormularioMaterial(false)
     } catch (err) {
       alert('Error al crear material: ' + err.message)
     }
   }
 
-  // Guardar movimiento y actualizar stock
   const guardarMovimiento = async (e) => {
     e.preventDefault()
     try {
@@ -115,11 +160,12 @@ export default function Inventario() {
       setMovimientoData({
         material_id: '',
         tipo_movimiento: '',
-        cantidad: '',
+        cantidad: 0,
         motivo: '',
         fecha_movimiento: new Date().toISOString().slice(0, 10),
         notas: '',
       })
+      setMostrarFormularioMovimiento(false)
     } catch (err) {
       alert('Error al registrar movimiento: ' + err.message)
     }
@@ -131,21 +177,251 @@ export default function Inventario() {
       <p className="mb-6 text-gray-400">Gestión de materiales, movimientos y proveedores</p>
 
       <div className="flex flex-wrap gap-3 mb-6">
-        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">Todas las categorías</button>
-        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">Todas las unidades</button>
-        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">Todos los estados</button>
+        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">
+          Todas las categorías
+        </button>
+        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">
+          Todas las unidades
+        </button>
+        <button className="bg-gray-800 py-2 px-4 rounded text-gray-300 font-semibold hover:bg-gray-700">
+          Todos los estados
+        </button>
 
-        <form onSubmit={guardarNuevoMaterial} className="ml-auto flex gap-3">
-          <button type="submit" className="bg-blue-600 py-2 px-5 rounded font-semibold hover:bg-blue-700">+ Nuevo Material</button>
-        </form>
+        <button
+          type="button"
+          onClick={() => setMostrarFormularioMaterial(true)}
+          className="bg-blue-600 py-2 px-5 rounded font-semibold hover:bg-blue-700 ml-auto"
+        >
+          + Nuevo Material
+        </button>
 
-        <form onSubmit={guardarMovimiento} className="flex gap-3">
-          <button type="submit" className="bg-green-600 py-2 px-5 rounded font-semibold hover:bg-green-700">Registrar Movimiento</button>
-        </form>
+        <button
+          type="button"
+          onClick={() => setMostrarFormularioMovimiento(true)}
+          className="bg-green-600 py-2 px-5 rounded font-semibold hover:bg-green-700"
+        >
+          Registrar Movimiento
+        </button>
       </div>
 
+      {/* Modal Nuevo Material */}
+      {mostrarFormularioMaterial && (
+        <Modal onClose={() => setMostrarFormularioMaterial(false)}>
+          <h3 className="text-xl font-semibold mb-4 text-white">Nuevo Material</h3>
+
+          <form onSubmit={guardarNuevoMaterial} className="space-y-4">
+            <div>
+              <label className="block mb-1 text-gray-300">Nombre del Material</label>
+              <input
+                type="text"
+                name="nombre"
+                value={nuevoMaterialData.nombre}
+                onChange={handleNuevoMaterialChange}
+                placeholder="Ej. Papel Bond A4"
+                className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-gray-300">Categoría</label>
+                <select
+                  name="categoria"
+                  value={nuevoMaterialData.categoria}
+                  onChange={handleNuevoMaterialChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Seleccionar...</option>
+                  {categorias.map(cat => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-gray-300">Unidad de Medida</label>
+                <select
+                  name="unidad"
+                  value={nuevoMaterialData.unidad}
+                  onChange={handleNuevoMaterialChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Seleccionar...</option>
+                  {unidades.map(uni => (
+                    <option key={uni.value} value={uni.value}>{uni.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-gray-300">Stock Mínimo</label>
+                <input
+                  type="number"
+                  name="stock_minimo"
+                  min="0"
+                  value={nuevoMaterialData.stock_minimo}
+                  onChange={handleNuevoMaterialChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 text-gray-300">Stock Actual</label>
+                <input
+                  type="number"
+                  name="stock_actual"
+                  min="0"
+                  value={nuevoMaterialData.stock_actual}
+                  onChange={handleNuevoMaterialChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setMostrarFormularioMaterial(false)}
+                className="px-4 py-2 rounded bg-gray-700 text-gray-400 hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Guardar Material
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal Registrar Movimiento */}
+      {mostrarFormularioMovimiento && (
+        <Modal onClose={() => setMostrarFormularioMovimiento(false)}>
+          <h3 className="text-xl font-semibold mb-4 text-white">Registrar Movimiento</h3>
+
+          <form onSubmit={guardarMovimiento} className="space-y-4">
+            <div>
+              <label className="block mb-1 text-gray-300">Material</label>
+              <select
+                name="material_id"
+                value={movimientoData.material_id}
+                onChange={handleMovimientoChange}
+                className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              >
+                <option value="">Seleccionar material...</option>
+                {materiales.map(mat => (
+                  <option key={mat.id} value={mat.id}>
+                    {mat.nombre} (Stock: {mat.stock_actual})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block mb-1 text-gray-300">Tipo de Movimiento</label>
+                <select
+                  name="tipo_movimiento"
+                  value={movimientoData.tipo_movimiento}
+                  onChange={handleMovimientoChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="entrada">Entrada</option>
+                  <option value="salida">Salida</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 text-gray-300">Cantidad</label>
+                <input
+                  type="number"
+                  name="cantidad"
+                  min="1"
+                  value={movimientoData.cantidad}
+                  onChange={handleMovimientoChange}
+                  className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-gray-300">Motivo (solo para Salida)</label>
+              <select
+                name="motivo"
+                value={movimientoData.motivo}
+                onChange={handleMovimientoChange}
+                className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                disabled={movimientoData.tipo_movimiento !== 'salida'}
+              >
+                <option value="">Seleccionar motivo...</option>
+                {motivosSalida.map(motivo => (
+                  <option key={motivo.value} value={motivo.value}>
+                    {motivo.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-1 text-gray-300">Fecha del Movimiento</label>
+              <input
+                type="date"
+                name="fecha_movimiento"
+                value={movimientoData.fecha_movimiento}
+                onChange={handleMovimientoChange}
+                className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 text-gray-300">Notas (opcional)</label>
+              <textarea
+                name="notas"
+                value={movimientoData.notas}
+                onChange={handleMovimientoChange}
+                placeholder="Observaciones adicionales..."
+                rows="3"
+                className="w-full p-3 bg-gray-800 rounded border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                type="button"
+                onClick={() => setMostrarFormularioMovimiento(false)}
+                className="px-4 py-2 rounded bg-gray-700 text-gray-400 hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Guardar Movimiento
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
       {/* Tabla Materiales */}
-      <table className="w-full border-collapse border-gray-700 border rounded-md mb-10">
+      <table className="w-full border-collapse border border-gray-700 rounded-md mb-10">
         <thead className="bg-gray-800 text-gray-300">
           <tr>
             <th className="py-3 px-4 text-left">Material</th>
@@ -158,55 +434,103 @@ export default function Inventario() {
         </thead>
         <tbody>
           {materiales.length === 0 ? (
-            <tr><td colSpan="6" className="p-6 text-center text-gray-500">No se encontraron materiales.</td></tr>
-          ) : materiales.map(mat => (
-            <tr key={mat.id} className="even:bg-gray-800 odd:bg-gray-900">
-              <td className="py-2 px-4 font-semibold">{mat.nombre}</td>
-              <td className="py-2 px-4">
-                <span className="bg-gray-700 px-2 py-1 rounded text-sm">{categorias.find(c => c.value === mat.categoria)?.label || mat.categoria}</span>
-              </td>
-              <td className="py-2 px-4 capitalize">{unidades.find(u => u.value === mat.unidad)?.label || mat.unidad}</td>
-              <td className="py-2 px-4">{mat.stock_minimo}</td>
-              <td className={`py-2 px-4 ${mat.stock_actual < mat.stock_minimo ? 'bg-red-600 text-white px-2 rounded' : ''}`}>
-                {mat.stock_actual}
-              </td>
-              <td className="py-2 px-4 space-x-2">
-                <button title="Editar" className="text-orange-400 hover:text-orange-500">✏️</button>
-                <button title="Eliminar" className="text-gray-400 hover:text-gray-200">🗑️</button>
+            <tr>
+              <td colSpan="6" className="p-6 text-center text-gray-500">
+                No se encontraron materiales.
               </td>
             </tr>
-          ))}
+          ) : (
+            materiales.map((mat) => (
+              <tr
+                key={mat.id}
+                className="even:bg-gray-800 odd:bg-gray-900 hover:bg-gray-700 transition-colors"
+              >
+                <td className="py-2 px-4 font-semibold">{mat.nombre}</td>
+                <td className="py-2 px-4">
+                  <span className="bg-gray-700 px-2 py-1 rounded text-sm">
+                    {categorias.find((c) => c.value === mat.categoria)?.label || mat.categoria}
+                  </span>
+                </td>
+                <td className="py-2 px-4 capitalize">
+                  {unidades.find((u) => u.value === mat.unidad)?.label || mat.unidad}
+                </td>
+                <td className="py-2 px-4">{mat.stock_minimo}</td>
+                <td
+                  className={`py-2 px-4 font-semibold ${
+                    mat.stock_actual < mat.stock_minimo
+                      ? 'bg-red-600 text-white px-2 rounded'
+                      : 'text-green-400'
+                  }`}
+                >
+                  {mat.stock_actual}
+                </td>
+                <td className="py-2 px-4 space-x-2">
+                  <button
+                    title="Editar"
+                    className="text-orange-400 hover:text-orange-500 p-1 rounded hover:bg-orange-500/20 transition-colors"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    title="Eliminar"
+                    className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-500/20 transition-colors"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
 
       {/* Tabla Movimientos */}
       <h2 className="mb-4 text-lg font-semibold">Movimientos Recientes</h2>
-      <table className="w-full border-collapse border border-gray-700 rounded-md overflow-hidden text-gray-300">
-        <thead className="bg-gray-800">
-          <tr>
-            <th className="py-2 px-4 text-left">Material</th>
-            <th className="py-2 px-4 text-left">Tipo</th>
-            <th className="py-2 px-4 text-left">Cantidad</th>
-            <th className="py-2 px-4 text-left">Motivo</th>
-            <th className="py-2 px-4 text-left">Fecha</th>
-            <th className="py-2 px-4 text-left">Notas</th>
-          </tr>
-        </thead>
-        <tbody>
-          {movimientos.length === 0 ? (
-            <tr><td colSpan="6" className="p-6 text-center text-gray-500">No se encontraron movimientos.</td></tr>
-          ) : movimientos.map(mov => (
-            <tr key={mov.id} className="even:bg-gray-800 odd:bg-gray-900">
-              <td className="py-2 px-4">{mov.materiales.nombre}</td>
-              <td className="py-2 px-4 capitalize">{mov.tipo_movimiento}</td>
-              <td className="py-2 px-4">{mov.cantidad}</td>
-              <td className="py-2 px-4">{mov.motivo || '-'}</td>
-              <td className="py-2 px-4">{new Date(mov.fecha_movimiento).toLocaleDateString()}</td>
-              <td className="py-2 px-4">{mov.notas || '-'}</td>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-700 rounded-md overflow-hidden text-gray-300">
+          <thead className="bg-gray-800">
+            <tr>
+              <th className="py-2 px-4 text-left">Material</th>
+              <th className="py-2 px-4 text-left">Tipo</th>
+              <th className="py-2 px-4 text-left">Cantidad</th>
+              <th className="py-2 px-4 text-left">Motivo</th>
+              <th className="py-2 px-4 text-left">Fecha</th>
+              <th className="py-2 px-4 text-left">Notas</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {movimientos.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="p-6 text-center text-gray-500">
+                  No se encontraron movimientos.
+                </td>
+              </tr>
+            ) : (
+              movimientos.map((mov) => (
+                <tr
+                  key={mov.id}
+                  className="even:bg-gray-800 odd:bg-gray-900 hover:bg-gray-700 transition-colors"
+                >
+                  <td className="py-2 px-4 font-medium">{mov.materiales?.nombre || 'N/A'}</td>
+                  <td
+                    className={`py-2 px-4 capitalize px-2 py-1 rounded font-medium ${
+                      mov.tipo_movimiento === 'entrada'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-red-600 text-white'
+                    }`}
+                  >
+                    {mov.tipo_movimiento}
+                  </td>
+                  <td className="py-2 px-4 font-semibold">{mov.cantidad}</td>
+                  <td className="py-2 px-4">{mov.motivo || '-'}</td>
+                  <td className="py-2 px-4">{new Date(mov.fecha_movimiento).toLocaleDateString()}</td>
+                  <td className="py-2 px-4 max-w-xs truncate" title={mov.notas}>{mov.notas || '-'}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
