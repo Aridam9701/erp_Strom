@@ -33,6 +33,11 @@ export default function Activos() {
     { value: 'laptop', label: 'Laptop' },
     { value: 'desktop', label: 'Desktop' },
     { value: 'tablet', label: 'Tablet' },
+    { value: 'cargador', label: 'Cargador' },
+    { value: 'pantalla', label: 'Pantalla' },
+    { value: 'teclado', label: 'Teclado' },
+    { value: 'mouse', label: 'Mouse' },
+    { value: 'audifonos', label: 'Audifonos' },
   ]
 
   // Función para generar código secuencial STR-0001, STR-0002…
